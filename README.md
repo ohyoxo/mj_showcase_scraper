@@ -6,7 +6,7 @@ This repository contains an enhanced JavaScript script designed for asynchronous
 
 1. Navigate to the webpage where the images are displayed. Open the image that you wish to begin scraping data from.
 2. Access the web browser's developer console.
-3. Copy-paste the script from `async_script.js` into the console and execute it.
+3. Copy-paste the script from `script.js` into the console and execute it.
 
 The script will automatically scrape the data for 30 images, starting from the one you initially opened.
 
