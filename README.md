@@ -1,30 +1,34 @@
-# Web Scraping Script for Image Metadata
+# Asynchronous Web Scraping Script for Image and Prompt Data
 
-This repository contains a JavaScript script for scraping image metadata. The script is designed to be run in the browser's console and captures various attributes like the image URL, prompt, user, and parameters. It also checks if an image prompt is present.
+This repository contains an enhanced JavaScript script designed for asynchronous scraping of image and prompt data from a web page. The script is executed in the browser's console and captures attributes such as the image URL and the associated prompt text.
 
 ## How to Use
 
-1. Navigate to the webpage where the images are displayed (Midjourney Community Showcase). Click on the first image to display its details (requires paid Midjourney subscription). 
-2. Open the web browser's developer console.
-3. Copy-paste the script from `script.js` into the console and run it.
+1. Navigate to the webpage where the images are displayed. Open the image that you wish to begin scraping data from.
+2. Access the web browser's developer console.
+3. Copy-paste the script from `async_script.js` into the console and execute it.
 
-The script will automatically go through the first 30 images on the page and collect their metadata.
+The script will automatically scrape the data for 30 images, starting from the one you initially opened.
 
 ## Output
 
-The output is displayed in a textarea on the webpage. You can copy this JSON formatted data to the clipboard by clicking the "Copy Data" button. To clear the textarea for a new batch, click the "Clear Data" button.
+The collected data is displayed in a fixed textarea at the top-left corner of the webpage. The output is in JSON format, now with trailing commas for ease of appending to continuous files.
+
+### Controls
+
+- **Copy**: Clicking the "Copy" button copies the entire JSON data to your clipboard.
+- **Clear**: Clicking the "Clear" button will clear the textarea.
 
 ## Script Features
 
-- Automatically navigates through images
-- Collects various types of metadata
-- Identifies if an image prompt is present
-- Easy to copy the output
-- Simple way to clear the output for the next batch
+- Asynchronous data extraction
+- Auto-navigation through images
+- Improved formatting in the output, including trailing commas
+- Quick actions for copying and clearing data
 
 ## Note
 
-This is a personal project and should not be used to violate any rules or terms of service on the website you are scraping.
+This is a personal project and should be used responsibly, adhering to any rules or terms of service on the website you are scraping.
 
 ## License
 
