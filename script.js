@@ -41,7 +41,7 @@ function displayData(data) {
   textarea.style.height = "150px";
   
   // Adding a trailing comma to the output
-  textarea.value = data.map(d => JSON.stringify(d, null, 2)).join(',\n') + ',';
+  textarea.value = data.map(d => JSON.stringify(d, null, 2)).join(',\n') + ',\n';
   
   copyButton.innerHTML = 'Copy';
   copyButton.style.zIndex = "10001";
