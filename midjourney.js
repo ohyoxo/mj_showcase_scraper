@@ -69,10 +69,9 @@ function displayData(data) {
   textarea.style.left = "20px";
   textarea.style.width = "300px";
   textarea.style.height = "150px";
-  
-  // Adding a trailing comma to the output
+
   textarea.value = data.map(d => JSON.stringify(d, null, 2)).join(',\n') + ',\n';
-  
+
   copyButton.innerHTML = 'Copy';
   copyButton.style.zIndex = "10001";
   copyButton.style.position = "fixed";
@@ -100,6 +99,15 @@ function displayData(data) {
 }
 
 (async function main() {
+<<<<<<< HEAD:midjourney.js
+  const allData = [];
+  for (let i = 0; i < 30; i++) {
+    const data = await extractMidjourneyData();
+    allData.push(data);
+    await clickNextButton();
+  }
+  displayData(allData);
+=======
   if (location.hostname.includes('midjourney.com')) {
     const allData = [];
     for (let i = 0; i < 30; i++) {
@@ -114,4 +122,5 @@ function displayData(data) {
   } else {
     console.error('Unsupported site');
   }
+>>>>>>> main:script.js
 })();
