@@ -1,4 +1,5 @@
-async function extractData() {
+// Extract a single item's data from the Midjourney showcase modal
+async function extractMidjourneyData() {
   const imgElement = document.querySelector('img.modalImage');
   const promptElement = document.querySelector('#modalPrompt');
   const paramsElement = document.querySelector('code');
@@ -18,6 +19,35 @@ async function extractData() {
     url,
     prompt
   };
+}
+
+// Extract all prompts and thumbnails from the Sora explore page
+async function extractSoraData() {
+  const items = Array.from(document.querySelectorAll('a[href^="/explore/"], a[href^="/share/"]'));
+  const results = [];
+
+  items.forEach(item => {
+    let url = 'N/A';
+    let prompt = 'N/A';
+
+    const imgEl = item.querySelector('img') || item.querySelector('video');
+    if (imgEl) {
+      if (imgEl.tagName.toLowerCase() === 'img') {
+        url = imgEl.src;
+      } else if (imgEl.tagName.toLowerCase() === 'video') {
+        url = imgEl.poster || imgEl.src || 'N/A';
+      }
+    }
+
+    const promptEl = item.querySelector('p') || item.parentElement.querySelector('p');
+    if (promptEl) {
+      prompt = promptEl.innerText.replace(/\n+/g, ' ').trim();
+    }
+
+    results.push({ url, prompt });
+  });
+
+  return results;
 }
 
 function clickNextButton() {
@@ -70,13 +100,18 @@ function displayData(data) {
 }
 
 (async function main() {
-  const allData = [];
-  
-  for (let i = 0; i < 30; i++) {
-    const data = await extractData();
-    allData.push(data);
-    await clickNextButton();
+  if (location.hostname.includes('midjourney.com')) {
+    const allData = [];
+    for (let i = 0; i < 30; i++) {
+      const data = await extractMidjourneyData();
+      allData.push(data);
+      await clickNextButton();
+    }
+    displayData(allData);
+  } else if (location.hostname.includes('sora.chatgpt.com')) {
+    const data = await extractSoraData();
+    displayData(data);
+  } else {
+    console.error('Unsupported site');
   }
-  
-  displayData(allData);
 })();
