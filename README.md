@@ -1,14 +1,16 @@
 # Asynchronous Web Scraping Script for Image and Prompt Data
 
-This repository contains an enhanced JavaScript script designed for asynchronous scraping of image and prompt data from a web page. The script is executed in the browser's console and captures attributes such as the image URL and the associated prompt text.
+This repository contains an enhanced JavaScript script designed for asynchronous scraping of image and prompt data from Midjourney's Community Showcase as well as prompts and thumbnails from OpenAI's [Sora](https://sora.chatgpt.com/explore) explore page. The script is executed in the browser's console and captures attributes such as the image or video thumbnail URL and the associated prompt text.
 
 ## How to Use
 
-1. Navigate to the webpage where the images are displayed. Open the image that you wish to begin scraping data from.
+1. Navigate to the page you would like to scrape.
+   - **Midjourney**: open the first showcase item you want and ensure the modal is visible.
+   - **Sora**: open the [explore page](https://sora.chatgpt.com/explore) and load the items you want to collect.
 2. Access the web browser's developer console.
 3. Copy-paste the script from `script.js` into the console and execute it.
 
-The script will automatically scrape the data for 30 images, starting from the one you initially opened.
+For Midjourney, the script will automatically scrape the data for 30 images, starting from the one you initially opened. On Sora, it will gather the prompts and thumbnails for all explore cards currently loaded on the page.
 
 ## Output
 
@@ -25,6 +27,10 @@ The collected data is displayed in a fixed textarea at the top-left corner of th
 - Auto-navigation through images
 - Improved formatting in the output, including trailing commas
 - Quick actions for copying and clearing data
+
+## Testing
+
+Run `npm test` to perform a syntax check of `script.js`.
 
 ## Note
 

@@ -1,0 +1,15 @@
+{
+  "name": "mj_showcase_scraper",
+  "version": "1.0.0",
+  "description": "Scraper for Midjourney Community Showcase and Sora explore prompts",
+  "scripts": {
+    "test": "node --check script.js"
+  },
+  "keywords": [
+    "scraper",
+    "midjourney",
+    "sora"
+  ],
+  "author": "",
+  "license": "MIT"
+}
