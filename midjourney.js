@@ -1,4 +1,5 @@
-async function extractData() {
+// Extract a single item's data from the Midjourney showcase modal
+async function extractMidjourneyData() {
   const imgElement = document.querySelector('img.modalImage');
   const promptElement = document.querySelector('#modalPrompt');
   const paramsElement = document.querySelector('code');
@@ -39,10 +40,9 @@ function displayData(data) {
   textarea.style.left = "20px";
   textarea.style.width = "300px";
   textarea.style.height = "150px";
-  
-  // Adding a trailing comma to the output
+
   textarea.value = data.map(d => JSON.stringify(d, null, 2)).join(',\n') + ',\n';
-  
+
   copyButton.innerHTML = 'Copy';
   copyButton.style.zIndex = "10001";
   copyButton.style.position = "fixed";
@@ -71,12 +71,10 @@ function displayData(data) {
 
 (async function main() {
   const allData = [];
-  
   for (let i = 0; i < 30; i++) {
-    const data = await extractData();
+    const data = await extractMidjourneyData();
     allData.push(data);
     await clickNextButton();
   }
-  
   displayData(allData);
 })();
