@@ -3,11 +3,7 @@
   "version": "1.0.0",
   "description": "Scraper for Midjourney Community Showcase and Sora explore prompts",
   "scripts": {
-<<<<<<< HEAD
     "test": "node --check midjourney.js && node --check sora.js"
-=======
-    "test": "node --check script.js"
->>>>>>> main
   },
   "keywords": [
     "scraper",

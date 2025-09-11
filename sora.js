@@ -1,78 +1,125 @@
-function extractSoraData() {
-  // Select the main image or video poster in the viewer
-  const media = document.querySelector(
-    'div.relative.w-\\[70\\%\\] img[alt="Generated image"], div.relative.w-\\[70\\%\\] video'
-  );
-  let url = 'N/A';
-  if (media) {
-    url = media.tagName === 'VIDEO' ? media.poster || media.src : media.src;
+/**
+ * Waits for the main media element's URL to change from the supplied old URL.
+ * This is used to confirm that a navigation (forward or back) has completed.
+ *
+ * @param {string} oldUrl - The media URL we expect to change away from.
+ * @param {number} timeout - Maximum time to wait in milliseconds.
+ * @returns {Promise<boolean>} True if the URL changed, false if it timed out.
+ */
+async function waitForNewUrl(oldUrl, timeout = 10000) {
+  const pollingInterval = 250;
+  const maxAttempts = timeout / pollingInterval;
+  for (let i = 0; i < maxAttempts; i++) {
+    const media = document.querySelector('div.relative.w-\\[70\\%\\] img[alt="Generated image"], div.relative.w-\\[70\\%\\] video');
+    if (media) {
+      const currentUrl = media.tagName === 'VIDEO' ? media.poster || media.src : media.src;
+      if (currentUrl && currentUrl !== oldUrl) {
+        console.log('Navigation complete.');
+        await new Promise(r => setTimeout(r, 500));
+        return true;
+      }
+    }
+    await new Promise(r => setTimeout(r, pollingInterval));
   }
-
-  // Find the "Prompt" label and get the text from the next element
-  const promptLabel = Array.from(document.querySelectorAll('div')).find(
-    (el) => el.textContent.trim() === 'Prompt'
-  );
-  const prompt =
-    promptLabel?.nextElementSibling?.textContent?.trim() || 'N/A';
-
-  // Find the user's name by looking for a link that contains "?user=" in its href
-  const userEl = document.querySelector('a[href*="?user="]');
-  const user = userEl?.textContent?.trim() || 'N/A';
-
-  return { url, user, prompt };
+  console.log('Timeout waiting for page navigation.');
+  return false;
 }
 
-async function clickNextImage(previousUrl) {
-  // Select the right-side container (which holds the next image) using a more robust selector
-  const container = document.querySelector(
-    '.flex.flex-1.cursor-pointer > div:last-child'
-  );
-  const nextLink = container?.querySelector('a');
+function extractSoraData() {
+  // --- Basic Info ---
+  const media = document.querySelector('div.relative.w-\\[70\\%\\] img[alt="Generated image"], div.relative.w-\\[70\\%\\] video');
+  const url = media ? (media.tagName === 'VIDEO' ? media.poster || media.src : media.src) : 'N/A';
 
-  if (!nextLink) {
-    console.log('Next link not found.');
-    return false;
-  }
-  nextLink.click();
+  // --- User Info ---
+  const userEl = document.querySelector('a[href*="?user="]');
+  const user = userEl?.textContent?.trim() || 'N/A';
+  const userUrl = userEl ? new URL(userEl.href, window.location.origin).href : 'N/A';
 
-  // Wait for the new image/video to load by polling
-  for (let i = 0; i < 20; i++) {
-    await new Promise((r) => setTimeout(r, 250)); // Wait for 250ms
-    const media = document.querySelector(
-      'div.relative.w-\\[70\\%\\] img[alt="Generated image"], div.relative.w-\\[70\\%\\] video'
-    );
-    if (media) {
-      const currentUrl =
-        media.tagName === 'VIDEO' ? media.poster || media.src : media.src;
-      // If the URL has changed, we have successfully moved to the next item
-      if (currentUrl && currentUrl !== previousUrl) {
-        return true;
+  // --- Likes Info ---
+  const likeSvgPath = 'M12 5.822c6.504-6.44 17.654 5.52 0 15.178C-5.654 11.342 5.496-.618 12 5.822Z';
+  const likeButton = document.querySelector(`svg path[d="${likeSvgPath}"]`)?.closest('button');
+  const likesText = likeButton?.querySelector('div.text-center')?.textContent.trim();
+  const likes = likesText ? parseInt(likesText.replace(/,/g, ''), 10) || 0 : 0;
+
+  // --- Prompt / Remix Info ---
+  let prompt = 'N/A';
+  let isRemix = false;
+  let remixParentUrl = null;
+
+  // Use a specific container to find the prompt details.
+  const promptDetailsContainer = document.querySelector('div[style="height: 60px;"]');
+  if (promptDetailsContainer) {
+    const labelEl = promptDetailsContainer.querySelector('div.text-token-text-secondary');
+    const promptButton = promptDetailsContainer.querySelector('button.truncate');
+
+    if (labelEl && promptButton) {
+      prompt = promptButton.textContent.trim();
+      if (labelEl.textContent.trim() === 'Remix') {
+        isRemix = true;
+        const parentImageLink = promptDetailsContainer.querySelector('div.relative.h-8.w-8 a');
+        if (parentImageLink) {
+          remixParentUrl = new URL(parentImageLink.href, window.location.origin).href;
+        }
       }
     }
   }
 
-  console.log('Failed to load the next image in time.');
-  return false; // Return false if the next image didn't load within 5 seconds
+  return { url, user, userUrl, likes, prompt, isRemix, remixParentUrl, remixParentPrompt: null };
+}
+
+async function clickNextImage(previousUrl) {
+  let container = document.querySelector('.flex.flex-1.cursor-pointer > div:last-child');
+  let nextLink = container?.querySelector('a');
+
+  if (!nextLink) {
+    const maxRetries = 3;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      console.log(`Next link not found. Attempting to load more (Attempt ${attempt}/${maxRetries})...`);
+      window.scrollTo(0, document.body.scrollHeight);
+      await new Promise(r => setTimeout(r, 3000)); 
+      
+      container = document.querySelector('.flex.flex-1.cursor-pointer > div:last-child');
+      nextLink = container?.querySelector('a');
+
+      if (nextLink) {
+        console.log('Successfully loaded more images.');
+        break;
+      }
+    }
+  }
+
+  if (!nextLink) {
+    console.log('Still no next link after multiple attempts. Assuming end of gallery.');
+    return false;
+  }
+
+  nextLink.click();
+  return await waitForNewUrl(previousUrl);
 }
 
 function displayData(data) {
-  // Create a UI to show and copy the scraped data
-  const existingTextarea = document.getElementById('sora-scraper-textarea');
-  if (existingTextarea) {
-    document.body.removeChild(existingTextarea.nextSibling); // remove copy button
-    document.body.removeChild(existingTextarea.nextSibling); // remove clear button
-    document.body.removeChild(existingTextarea);
+  const existingContainer = document.getElementById('sora-scraper-container');
+  if (existingContainer) {
+    document.body.removeChild(existingContainer);
   }
 
+  const container = document.createElement('div');
+  container.id = 'sora-scraper-container';
+  container.style.zIndex = '10000';
+  container.style.position = 'fixed';
+  container.style.top = '20px';
+  container.style.left = '20px';
+  container.style.fontFamily = 'monospace';
+  container.style.backgroundColor = 'rgba(40, 40, 40, 0.95)';
+  container.style.padding = '15px';
+  container.style.borderRadius = '10px';
+  container.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
+  container.style.pointerEvents = 'auto';
+
   const textarea = document.createElement('textarea');
-  textarea.id = 'sora-scraper-textarea';
   const copyButton = document.createElement('button');
   const clearButton = document.createElement('button');
-
-  textarea.style.zIndex = '10000';
-  textarea.style.position = 'fixed';
-  textarea.style.top = '20px';
-  textarea.style.left = '20px';
+  
   textarea.style.width = '350px';
   textarea.style.height = '200px';
   textarea.style.backgroundColor = '#222';
@@ -80,66 +127,102 @@ function displayData(data) {
   textarea.style.border = '1px solid #555';
   textarea.style.borderRadius = '8px';
   textarea.style.padding = '10px';
+  textarea.style.display = 'block';
 
-  textarea.value =
-    '[\n' + data.map((d) => JSON.stringify(d, null, 2)).join(',\n') + '\n]';
+  textarea.value = '[\n' + data.map((d) => JSON.stringify(d, null, 2)).join(',\n') + '\n]';
+  
+  const buttonContainer = document.createElement('div');
+  buttonContainer.style.marginTop = '8px';
 
   copyButton.innerHTML = '📋 Copy JSON';
-  copyButton.style.zIndex = '10001';
-  copyButton.style.position = 'fixed';
-  copyButton.style.top = '230px';
-  copyButton.style.left = '20px';
-  copyButton.style.cursor = 'pointer';
-
   clearButton.innerHTML = '🗑️ Clear';
-  clearButton.style.zIndex = '10001';
-  clearButton.style.position = 'fixed';
-  clearButton.style.top = '230px';
-  clearButton.style.left = '130px';
-  clearButton.style.cursor = 'pointer';
+  [copyButton, clearButton].forEach(btn => {
+    btn.style.cursor = 'pointer';
+    btn.style.marginRight = '8px';
+    btn.style.padding = '5px 10px';
+    btn.style.border = '1px solid #555';
+    btn.style.borderRadius = '5px';
+    btn.style.backgroundColor = '#333';
+    btn.style.color = '#eee';
+  });
 
-  copyButton.addEventListener('click', () => {
+  copyButton.addEventListener('click', (event) => {
+    event.stopPropagation();
     navigator.clipboard.writeText(textarea.value).then(() => {
       copyButton.innerHTML = '✅ Copied!';
-      setTimeout(() => {
-        copyButton.innerHTML = '📋 Copy JSON';
-      }, 2000);
+      setTimeout(() => { copyButton.innerHTML = '📋 Copy JSON'; }, 2000);
     });
   });
 
-  clearButton.addEventListener('click', () => {
-    textarea.value = '';
+  clearButton.addEventListener('click', (event) => {
+    event.stopPropagation();
+    textarea.value = '[]';
     results.length = 0;
   });
-
-  document.body.appendChild(textarea);
-  document.body.appendChild(copyButton);
-  document.body.appendChild(clearButton);
+  
+  buttonContainer.appendChild(copyButton);
+  buttonContainer.appendChild(clearButton);
+  container.appendChild(textarea);
+  container.appendChild(buttonContainer);
+  document.body.appendChild(container);
 }
 
-// Main execution function
+// --- Main execution function ---
 const results = [];
-(async function main() {
-  // You can change the number of images to scrape here
-  const imagesToScrape = 30;
 
-  for (let i = 0; i < imagesToScrape; i++) {
-    console.log(`Scraping image ${i + 1}/${imagesToScrape}...`);
+(async function main() {
+  const TARGET_IMAGE_COUNT = 100;
+
+  while (results.length < TARGET_IMAGE_COUNT) {
+    console.log(`Scraping image ${results.length + 1}/${TARGET_IMAGE_COUNT}...`);
+    
+    await new Promise(r => setTimeout(r, 200)); 
+
     const data = extractSoraData();
-    if (data.url === 'N/A' || results.some((r) => r.url === data.url)) {
-      console.log('No new data found or duplicate detected. Stopping.');
-      break;
+    
+    if (data.url === 'N/A') {
+      console.log('Could not extract data from the current view. Retrying...');
+      await new Promise(r => setTimeout(r, 1000));
+      continue;
     }
+    
+    if (results.some((r) => r.url === data.url)) {
+      console.log('Duplicate image detected. Trying to click next again.');
+      const movedAgain = await clickNextImage(data.url);
+      if(!movedAgain){
+        break;
+      }
+      continue;
+    }
+
+    // Traverse to remix parent to capture its prompt if available
+    if (data.isRemix && data.remixParentUrl) {
+      console.log(`Found a remix. Traversing to parent: ${data.remixParentUrl}`);
+      const parentLinkEl = document.querySelector('div[style="height: 60px;"] div.relative.h-8.w-8 a');
+      if (parentLinkEl) {
+        parentLinkEl.click();
+        if (await waitForNewUrl(data.url)) {
+          const parentData = extractSoraData();
+          data.remixParentPrompt = parentData.prompt;
+          console.log(`Parent prompt captured: "${data.remixParentPrompt}"`);
+          const parentMediaUrl = parentData.url;
+          history.back();
+          await waitForNewUrl(parentMediaUrl);
+        }
+      }
+    }
+
     results.push(data);
+    displayData(results);
 
     const moved = await clickNextImage(data.url);
     if (!moved) {
-      console.log('Could not move to the next image. Stopping scrape.');
+      console.log('Scraping stopped.');
       break;
     }
   }
 
-  console.log('Scraping complete. Displaying data.');
+  console.log(`Scraping finished. Collected ${results.length} items.`);
   displayData(results);
 })();
 
