@@ -36,10 +36,10 @@ function extractSoraData() {
   const userUrl = userEl ? new URL(userEl.href, window.location.origin).href : 'N/A';
 
   // --- Likes Info ---
-  const likeSvgPath = 'M12 5.822c6.504-6.44 17.654 5.52 0 15.178C-5.654 11.342 5.496-.618 12 5.822Z';
-  const likeButton = document.querySelector(`svg path[d="${likeSvgPath}"]`)?.closest('button');
-  const likesText = likeButton?.querySelector('div.text-center')?.textContent.trim();
-  const likes = likesText ? parseInt(likesText.replace(/,/g, ''), 10) || 0 : 0;
+  const likeSpan = Array.from(document.querySelectorAll('span.sr-only'))
+    .find(span => span.textContent.trim() === 'Like');
+  const likesText = likeSpan?.previousElementSibling?.textContent.trim();
+  const likes = likesText ? parseInt(likesText.replace(/,/g, ''), 10) : 0;
 
   // --- Prompt / Remix Info ---
   let prompt = 'N/A';
